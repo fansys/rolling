@@ -1,9 +1,11 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Base
 
-# SQLite 数据库配置
-SQLALCHEMY_DATABASE_URL = "sqlite:///./rollcall.db"
+# SQLite 数据库配置 - 从环境变量读取
+DB_FILE = os.getenv("DB_FILE", "rollcall.db")
+SQLALCHEMY_DATABASE_URL = f"sqlite:///./{DB_FILE}"
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 

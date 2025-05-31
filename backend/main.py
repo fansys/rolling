@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -29,23 +30,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 启动时创建数据库表
+# 初始化数据库和管理员用户
+def initialize_database():
+    """初始化数据库表和管理员用户"""
+    # 创建数据库表
+    create_tables()
+    
+    # 从环境变量获取管理员账户信息
+    admin_username = os.getenv("ADMIN_USER", "admin")
+    admin_password = os.getenv("ADMIN_PASSWORD", "123456")
+    
+    # 创建默认管理员用户（如果不存在）
+    db = next(get_db())
+    try:
+        admin_user = db.query(User).filter(User.username == admin_username).first()
+        if not admin_user:
+            admin_user = User(
+                username=admin_username,
+                email=f"{admin_username}@example.com",
+                hashed_password=get_password_hash(admin_password),
+                user_type="admin"
+            )
+            db.add(admin_user)
+            db.commit()
+            print(f"管理员用户 '{admin_username}' 创建成功")
+        else:
+            print(f"管理员用户 '{admin_username}' 已存在")
+    finally:
+        db.close()
+
+# 启动时初始化数据库
 @app.on_event("startup")
 def startup_event():
-    create_tables()
-    # 创建默认管理员用户
-    db = next(get_db())
-    admin_user = db.query(User).filter(User.username == "admin").first()
-    if not admin_user:
-        admin_user = User(
-            username="admin",
-            email="admin@example.com",
-            hashed_password=get_password_hash("admin123"),
-            user_type="admin"
-        )
-        db.add(admin_user)
-        db.commit()
-    db.close()
+    initialize_database()
 
 @app.get("/")
 def read_root():

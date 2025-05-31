@@ -11,6 +11,9 @@ services:
       - "8000:8000"
     environment:
       - PYTHONPATH=/app
+      - DB_FILE=rollcall.db
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=123456
     volumes:
       - ./backend/data:/app/data
     restart: unless-stopped

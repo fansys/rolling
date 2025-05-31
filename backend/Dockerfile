@@ -7,6 +7,9 @@ WORKDIR /app
 # 设置环境变量
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV DB_FILE=rollcall.db
+ENV ADMIN_USER=admin
+ENV ADMIN_PASSWORD=123456
 
 # 配置国内镜像源
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
