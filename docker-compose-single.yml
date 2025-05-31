@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  # 单容器服务（前后端一体）
+  rollcall-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rollcall-app
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - DB_FILE=rollcall.db
+      - ADMIN_USER=admin
+      - ADMIN_PASSWORD=123456
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  app_data:
+    driver: local
+
+networks:
+  default:
+    name: rollcall-network

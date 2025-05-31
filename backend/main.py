@@ -1,9 +1,12 @@
 import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import List
+from pathlib import Path
 
 from database import get_db, create_tables
 from models import User, Class, Group, Student, RollCallRecord
@@ -29,6 +32,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 挂载静态文件服务
+static_dir = Path("/app/static")
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+    
+    # 为前端路由提供index.html
+    @app.get("/{full_path:path}")
+    async def serve_frontend(full_path: str):
+        # API路由不处理
+        if full_path.startswith("api/") or full_path.startswith("auth/") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("openapi.json"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # 检查是否为静态资源
+        file_path = static_dir / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        
+        # 对于其他路径，返回index.html（用于React Router）
+        index_path = static_dir / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        
+        raise HTTPException(status_code=404, detail="Not found")
 
 # 初始化数据库和管理员用户
 def initialize_database():
