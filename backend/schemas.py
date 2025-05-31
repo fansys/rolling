@@ -16,7 +16,7 @@ class UserBase(BaseSchema):
     email: EmailStr
     user_type: str = "teacher"
 
-class UserCreate(BaseSchema):
+class UserCreate(UserBase):
     password: str
 
 class UserUpdate(BaseModel):
