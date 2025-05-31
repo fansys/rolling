@@ -34,9 +34,9 @@ app.add_middleware(
 )
 
 # 挂载静态文件服务
-static_dir = Path("/app/static")
+static_dir = Path("static")
 if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+    app.mount("/static", StaticFiles(directory=str(static_dir / "static")), name="static")
     
     # 为前端路由提供index.html
     @app.get("/{full_path:path}")
