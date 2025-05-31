@@ -1,12 +1,9 @@
 import os
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import List
-from pathlib import Path
 
 from database import get_db, create_tables
 from models import User, Class, Group, Student, RollCallRecord
@@ -32,30 +29,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 挂载静态文件服务
-static_dir = Path("static")
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir / "static")), name="static")
-    
-    # 为前端路由提供index.html
-    @app.get("/{full_path:path}")
-    async def serve_frontend(full_path: str):
-        # API路由不处理
-        if full_path.startswith("api/") or full_path.startswith("auth/") or full_path.startswith("docs") or full_path.startswith("redoc") or full_path.startswith("openapi.json"):
-            raise HTTPException(status_code=404, detail="Not found")
-        
-        # 检查是否为静态资源
-        file_path = static_dir / full_path
-        if file_path.exists() and file_path.is_file():
-            return FileResponse(str(file_path))
-        
-        # 对于其他路径，返回index.html（用于React Router）
-        index_path = static_dir / "index.html"
-        if index_path.exists():
-            return FileResponse(str(index_path))
-        
-        raise HTTPException(status_code=404, detail="Not found")
 
 # 初始化数据库和管理员用户
 def initialize_database():
@@ -91,12 +64,12 @@ def initialize_database():
 def startup_event():
     initialize_database()
 
-@app.get("/api")
+@app.get("/")
 def read_root():
     return {"msg": "智能点名系统 FastAPI 后端已启动"}
 
 # 认证相关API
-@app.post("/api/auth/login", response_model=Token)
+@app.post("/auth/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):
     user = authenticate_user(db, login_data.username, login_data.password)
     if not user:
@@ -115,11 +88,11 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         "user": user
     }
 
-@app.get("/api/auth/me", response_model=UserSchema)
+@app.get("/auth/me", response_model=UserSchema)
 def get_current_user_info(current_user: User = Depends(get_current_active_user)):
     return current_user
 
-@app.put("/api/auth/profile", response_model=UserSchema)
+@app.put("/auth/profile", response_model=UserSchema)
 def update_profile(profile_data: UserProfile, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     if profile_data.email:
         # 检查邮箱是否已存在
@@ -135,7 +108,7 @@ def update_profile(profile_data: UserProfile, current_user: User = Depends(get_c
     db.refresh(current_user)
     return current_user
 
-@app.put("/api/auth/change-password", response_model=Message)
+@app.put("/auth/change-password", response_model=Message)
 async def change_password(
     request: ChangePasswordRequest,
     current_user: User = Depends(get_current_active_user),
@@ -153,7 +126,7 @@ async def change_password(
     
     return {"message": "密码修改成功"}
 
-@app.put("/api/users/{user_id}/reset-password", response_model=Message)
+@app.put("/users/{user_id}/reset-password", response_model=Message)
 def reset_user_password(
     user_id: int,
     request: ResetPasswordRequest,
@@ -174,11 +147,11 @@ def reset_user_password(
     return {"message": "密码重置成功"}
 
 # 用户管理API（仅管理员）
-@app.get("/api/users", response_model=List[UserSchema])
+@app.get("/users", response_model=List[UserSchema])
 def get_users(admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     return db.query(User).all()
 
-@app.post("/api/users", response_model=UserSchema)
+@app.post("/users", response_model=UserSchema)
 def create_user(user_data: UserCreate, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     # 检查用户名是否已存在
     existing_user = db.query(User).filter(User.username == user_data.username).first()
@@ -202,7 +175,7 @@ def create_user(user_data: UserCreate, admin_user: User = Depends(get_admin_user
     db.refresh(db_user)
     return db_user
 
-@app.put("/api/users/{user_id}", response_model=UserSchema)
+@app.put("/users/{user_id}", response_model=UserSchema)
 def update_user(user_id: int, user_data: UserUpdate, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
@@ -225,7 +198,7 @@ def update_user(user_id: int, user_data: UserUpdate, admin_user: User = Depends(
     db.refresh(db_user)
     return db_user
 
-@app.delete("/api/users/{user_id}", response_model=Message)
+@app.delete("/users/{user_id}", response_model=Message)
 def delete_user(user_id: int, admin_user: User = Depends(get_admin_user), db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
@@ -239,11 +212,11 @@ def delete_user(user_id: int, admin_user: User = Depends(get_admin_user), db: Se
     return {"message": "用户删除成功"}
 
 # 班级管理API
-@app.get("/api/classes", response_model=List[ClassSchema])
+@app.get("/classes", response_model=List[ClassSchema])
 def get_classes(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     return db.query(Class).filter(Class.owner_id == current_user.id).all()
 
-@app.post("/api/classes", response_model=ClassSchema)
+@app.post("/classes", response_model=ClassSchema)
 def create_class(class_data: ClassCreate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_class = Class(
         name=class_data.name,
@@ -254,7 +227,7 @@ def create_class(class_data: ClassCreate, current_user: User = Depends(get_curre
     db.refresh(db_class)
     return db_class
 
-@app.put("/api/classes/{class_id}", response_model=ClassSchema)
+@app.put("/classes/{class_id}", response_model=ClassSchema)
 def update_class(class_id: int, class_data: ClassUpdate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_class = db.query(Class).filter(Class.id == class_id, Class.owner_id == current_user.id).first()
     if not db_class:
@@ -267,7 +240,7 @@ def update_class(class_id: int, class_data: ClassUpdate, current_user: User = De
     db.refresh(db_class)
     return db_class
 
-@app.delete("/api/classes/{class_id}", response_model=Message)
+@app.delete("/classes/{class_id}", response_model=Message)
 def delete_class(class_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_class = db.query(Class).filter(Class.id == class_id, Class.owner_id == current_user.id).first()
     if not db_class:
@@ -278,7 +251,7 @@ def delete_class(class_id: int, current_user: User = Depends(get_current_active_
     return {"message": "班级删除成功"}
 
 # 分组管理API
-@app.get("/api/classes/{class_id}/groups", response_model=List[GroupSchema])
+@app.get("/classes/{class_id}/groups", response_model=List[GroupSchema])
 def get_groups(class_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     # 验证班级所有权
     db_class = db.query(Class).filter(Class.id == class_id, Class.owner_id == current_user.id).first()
@@ -287,7 +260,7 @@ def get_groups(class_id: int, current_user: User = Depends(get_current_active_us
     
     return db.query(Group).filter(Group.class_id == class_id).all()
 
-@app.post("/api/groups", response_model=GroupSchema)
+@app.post("/groups", response_model=GroupSchema)
 def create_group(group_data: GroupCreate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     # 验证班级所有权
     db_class = db.query(Class).filter(Class.id == group_data.class_id, Class.owner_id == current_user.id).first()
@@ -303,7 +276,7 @@ def create_group(group_data: GroupCreate, current_user: User = Depends(get_curre
     db.refresh(db_group)
     return db_group
 
-@app.put("/api/groups/{group_id}", response_model=GroupSchema)
+@app.put("/groups/{group_id}", response_model=GroupSchema)
 def update_group(group_id: int, group_data: GroupUpdate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_group = db.query(Group).join(Class).filter(Group.id == group_id, Class.owner_id == current_user.id).first()
     if not db_group:
@@ -316,7 +289,7 @@ def update_group(group_id: int, group_data: GroupUpdate, current_user: User = De
     db.refresh(db_group)
     return db_group
 
-@app.delete("/api/groups/{group_id}", response_model=Message)
+@app.delete("/groups/{group_id}", response_model=Message)
 def delete_group(group_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_group = db.query(Group).join(Class).filter(Group.id == group_id, Class.owner_id == current_user.id).first()
     if not db_group:
@@ -327,7 +300,7 @@ def delete_group(group_id: int, current_user: User = Depends(get_current_active_
     return {"message": "分组删除成功"}
 
 # 学生管理API
-@app.get("/api/groups/{group_id}/students", response_model=List[StudentSchema])
+@app.get("/groups/{group_id}/students", response_model=List[StudentSchema])
 def get_students(group_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     # 验证分组所有权
     db_group = db.query(Group).join(Class).filter(Group.id == group_id, Class.owner_id == current_user.id).first()
@@ -336,7 +309,7 @@ def get_students(group_id: int, current_user: User = Depends(get_current_active_
     
     return db.query(Student).filter(Student.group_id == group_id).all()
 
-@app.post("/api/students", response_model=StudentSchema)
+@app.post("/students", response_model=StudentSchema)
 def create_student(student_data: StudentCreate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     # 验证分组所有权
     db_group = db.query(Group).join(Class).filter(Group.id == student_data.group_id, Class.owner_id == current_user.id).first()
@@ -354,7 +327,7 @@ def create_student(student_data: StudentCreate, current_user: User = Depends(get
     db.refresh(db_student)
     return db_student
 
-@app.put("/api/students/{student_id}", response_model=StudentSchema)
+@app.put("/students/{student_id}", response_model=StudentSchema)
 def update_student(student_id: int, student_data: StudentUpdate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_student = db.query(Student).join(Group).join(Class).filter(Student.id == student_id, Class.owner_id == current_user.id).first()
     if not db_student:
@@ -371,7 +344,7 @@ def update_student(student_id: int, student_data: StudentUpdate, current_user: U
     db.refresh(db_student)
     return db_student
 
-@app.delete("/api/students/{student_id}", response_model=Message)
+@app.delete("/students/{student_id}", response_model=Message)
 def delete_student(student_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     db_student = db.query(Student).join(Group).join(Class).filter(Student.id == student_id, Class.owner_id == current_user.id).first()
     if not db_student:
@@ -382,7 +355,7 @@ def delete_student(student_id: int, current_user: User = Depends(get_current_act
     return {"message": "学生删除成功"}
 
 # 点名相关API
-@app.post("/api/roll-call", response_model=RollCallRecordSchema)
+@app.post("/roll-call", response_model=RollCallRecordSchema)
 def create_roll_call_record(record_data: RollCallRecordCreate, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     # 验证学生和班级所有权
     db_student = db.query(Student).join(Group).join(Class).filter(Student.id == record_data.student_id, Class.owner_id == current_user.id).first()
@@ -403,6 +376,6 @@ def create_roll_call_record(record_data: RollCallRecordCreate, current_user: Use
     db.refresh(db_record)
     return db_record
 
-@app.get("/api/roll-call/history", response_model=List[RollCallRecordSchema])
+@app.get("/roll-call/history", response_model=List[RollCallRecordSchema])
 def get_roll_call_history(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     return db.query(RollCallRecord).join(Class).join(Group).filter(Class.owner_id == current_user.id).all()
