@@ -60,7 +60,7 @@ RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debia
     #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key'  | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg && \
     #curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt'  > /etc/apt/sources.list.d/caddy-stable.list && \
     #apt-get update && \
-    apt-get install -y caddy && \
+    apt-get install -y caddy curl && \
     rm -rf /var/lib/apt/lists/*
 
 # 拷贝前端构建结果到 Caddy 默认网站目录
