@@ -10,6 +10,7 @@
 
     # API 请求转发到本地 Python 后端
     handle /api/* {
+        uri strip_prefix /api
         reverse_proxy http://localhost:8000
     }
 
