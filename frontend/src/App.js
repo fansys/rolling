@@ -47,7 +47,6 @@ function AppRoutes() {
     <Routes>
       <Route path="/login" element={<LoginRoute><LoginPage /></LoginRoute>} />
       <Route path="/users" element={<ProtectedRoute><UserManagePage /></ProtectedRoute>} />
-      <Route path="/classes" element={<ProtectedRoute><ClassManagePage /></ProtectedRoute>} />
       <Route path="/students" element={<ProtectedRoute><StudentManagePage /></ProtectedRoute>} />
       <Route path="/rollcall" element={<ProtectedRoute><RollCallPage /></ProtectedRoute>} />
       <Route path="/" element={<Navigate to="/rollcall" />} />

@@ -40,7 +40,7 @@ function UserProfileModal({ isOpen, onClose }) {
       }
 
       // 调用API更新用户资料
-      const updatedUser = await ApiService.updateProfile(updateData);
+      const updatedUser = await ApiService.updateProfile.call(ApiService, updateData);
       
       // 更新本地用户信息
       updateUser(updatedUser);
