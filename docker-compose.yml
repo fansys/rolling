@@ -1,6 +1,6 @@
 services:
   # 后端服务
-  backend:
+  rollcall:
     build:
       context: .
       dockerfile: Dockerfile
@@ -15,8 +15,3 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
