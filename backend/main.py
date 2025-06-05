@@ -68,6 +68,10 @@ def startup_event():
 def read_root():
     return {"msg": "智能点名系统 FastAPI 后端已启动"}
 
+@app.get("/healthz")
+def health_check():
+    return {"status": "ok"}
+
 # 认证相关API
 @app.post("/auth/login", response_model=Token)
 def login(login_data: LoginRequest, db: Session = Depends(get_db)):

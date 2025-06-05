@@ -72,7 +72,7 @@ function LoginPage() {
       // 调用认证上下文的登录方法
       await login(values.username, values.password);
       // 登录成功后跳转到学生管理页面
-      navigate('/students');
+      navigate('/');
     } catch (error) {
       // 登录失败时抛出错误，由 useForm 处理
       throw new Error(error.message || '登录失败，请检查用户名和密码');

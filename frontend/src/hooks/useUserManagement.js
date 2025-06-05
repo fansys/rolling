@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import ApiService from '../services/api';
 import { useDataManager } from './useApi';
 

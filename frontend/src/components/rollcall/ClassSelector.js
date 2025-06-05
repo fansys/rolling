@@ -11,8 +11,7 @@
  * - 支持快速切换不同班级
  */
 import React from 'react';
-import { ChevronDownIcon, UserGroupIcon } from '@heroicons/react/24/outline';
-import { Button } from '../ui';
+import { UserGroupIcon } from '@heroicons/react/24/outline';
 
 /**
  * 班级选择器组件

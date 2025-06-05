@@ -13,7 +13,6 @@
  */
 import React from 'react';
 import { UserGroupIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { Button } from '../ui';
 
 /**
  * 分组选择器组件
@@ -85,18 +84,18 @@ function GroupSelector({
       {/* 全选按钮和统计信息 */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={handleSelectAll}
             disabled={disabled}
             className={`
-              ${isAllSelected ? 'bg-blue-50 border-blue-300 text-blue-700' : ''}
+              px-3 py-1.5 text-sm font-medium rounded-md border transition-colors
+              ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+              ${isAllSelected ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}
               ${isPartialSelected ? 'bg-yellow-50 border-yellow-300 text-yellow-700' : ''}
             `}
           >
             {isAllSelected ? '取消全选' : '全选'}
-          </Button>
+          </button>
         </div>
         
         {/* 统计信息 */}
