@@ -126,7 +126,7 @@ function LoginPage() {
           {/* 错误信息显示 */}
           {error && (
             <div className="mb-4">
-              <ErrorMessage message={error} />
+              <ErrorMessage error={error} />
             </div>
           )}
           
